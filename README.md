@@ -22,7 +22,7 @@ CREATE DATABASE clinix_db;
 Identifiants par défaut (modifiables dans `src/main/resources/application.properties`) :
 - **Port** : `5432`
 - **Utilisateur** : `postgres`
-- **Mot de passe** : `Aurlin10`
+- **Mot de passe** : ``
 
 *Les tables et un jeu de données initial (`data.sql`) seront automatiquement créés et insérés au démarrage.*
 
