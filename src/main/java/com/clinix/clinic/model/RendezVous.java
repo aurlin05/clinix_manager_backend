@@ -18,6 +18,9 @@ public class RendezVous {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "clinic_id")
+    private Long clinicId;
+
     @Column(name = "date_heure", nullable = false)
     private LocalDateTime dateHeure;
 

@@ -32,6 +32,14 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private Role role;
 
+    /** ID du profil Medecin lié (uniquement pour role = MEDECIN) */
+    @Column(name = "medecin_id")
+    private Long medecinId;
+
+    /** Clinique à laquelle appartient cet utilisateur */
+    @Column(name = "clinic_id")
+    private Long clinicId;
+
     // ---- UserDetails implementation ----
 
     @Override

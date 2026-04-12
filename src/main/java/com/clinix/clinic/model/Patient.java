@@ -45,6 +45,9 @@ public class Patient {
     @Column(columnDefinition = "TEXT")
     private String antecedents;
 
+    @Column(name = "clinic_id")
+    private Long clinicId;
+
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

@@ -6,7 +6,9 @@ import lombok.*;
 import java.util.List;
 
 @Entity
-@Table(name = "medecins")
+@Table(name = "medecins", uniqueConstraints = {
+    @UniqueConstraint(name = "uk_medecin_clinic_matricule", columnNames = {"clinic_id", "matricule"})
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -32,11 +34,14 @@ public class Medecin {
     @Column(length = 20)
     private String telephone;
 
-    @Column(unique = true, length = 20)
+    @Column(length = 20)
     private String matricule;
 
     @Column(nullable = false)
     private boolean disponible = true;
+
+    @Column(name = "clinic_id")
+    private Long clinicId;
 
     @OneToMany(mappedBy = "medecin", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude

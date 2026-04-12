@@ -16,44 +16,49 @@ public class PatientService {
 
     private final PatientRepository patientRepository;
 
-    // ── Liste paginée ──────────────────────────────────────────────────────
-    public Page<PatientResponse> findAll(int page, int size, String sortBy) {
+    public Page<PatientResponse> findAll(Long clinicId, int page, int size, String sortBy) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
-        return patientRepository.findAll(pageable).map(this::toResponse);
+        return patientRepository.findByClinicId(clinicId, pageable).map(this::toResponse);
     }
 
-    // ── Recherche paginée ──────────────────────────────────────────────────
-    public Page<PatientResponse> search(String keyword, int page, int size) {
+    public Page<PatientResponse> search(Long clinicId, String keyword, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return patientRepository.searchByKeyword(keyword, pageable).map(this::toResponse);
+        return patientRepository.searchByKeyword(clinicId, keyword, pageable).map(this::toResponse);
     }
 
-    // ── Trouver par ID ─────────────────────────────────────────────────────
+    public Page<PatientResponse> findByMedecin(Long clinicId, Long medecinId, int page, int size, String sortBy) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
+        return patientRepository.findByMedecinId(clinicId, medecinId, pageable).map(this::toResponse);
+    }
+
+    public Page<PatientResponse> searchByMedecin(Long clinicId, Long medecinId, String keyword, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return patientRepository.searchByMedecinId(clinicId, medecinId, keyword, pageable).map(this::toResponse);
+    }
+
     public PatientResponse findById(Long id) {
         return toResponse(getPatientOrThrow(id));
     }
 
-    // ── Créer ──────────────────────────────────────────────────────────────
     @Transactional
-    public PatientResponse create(PatientRequest request) {
-        if (request.getCin() != null && patientRepository.existsByCin(request.getCin())) {
+    public PatientResponse create(Long clinicId, PatientRequest request) {
+        if (request.getCin() != null && patientRepository.existsByCinAndClinicId(request.getCin(), clinicId)) {
             throw new IllegalArgumentException("Un patient avec le CIN " + request.getCin() + " existe déjà.");
         }
-        if (request.getEmail() != null && patientRepository.existsByEmail(request.getEmail())) {
+        if (request.getEmail() != null && patientRepository.existsByEmailAndClinicId(request.getEmail(), clinicId)) {
             throw new IllegalArgumentException("Un patient avec l'email " + request.getEmail() + " existe déjà.");
         }
         Patient patient = toEntity(request);
+        patient.setClinicId(clinicId);
         return toResponse(patientRepository.save(patient));
     }
 
-    // ── Mettre à jour ──────────────────────────────────────────────────────
     @Transactional
-    public PatientResponse update(Long id, PatientRequest request) {
+    public PatientResponse update(Long clinicId, Long id, PatientRequest request) {
         Patient patient = getPatientOrThrow(id);
 
-        // Vérifier unicité CIN si modifié
         if (request.getCin() != null && !request.getCin().equals(patient.getCin())
-                && patientRepository.existsByCin(request.getCin())) {
+                && patientRepository.existsByCinAndClinicId(request.getCin(), clinicId)) {
             throw new IllegalArgumentException("Un patient avec le CIN " + request.getCin() + " existe déjà.");
         }
 
@@ -70,7 +75,6 @@ public class PatientService {
         return toResponse(patientRepository.save(patient));
     }
 
-    // ── Supprimer ──────────────────────────────────────────────────────────
     @Transactional
     public void delete(Long id) {
         if (!patientRepository.existsById(id)) {
@@ -79,33 +83,20 @@ public class PatientService {
         patientRepository.deleteById(id);
     }
 
-    // ── Mappers privés ─────────────────────────────────────────────────────
     private Patient toEntity(PatientRequest r) {
         return Patient.builder()
-                .nom(r.getNom())
-                .prenom(r.getPrenom())
-                .dateNaissance(r.getDateNaissance())
-                .cin(r.getCin())
-                .email(r.getEmail())
-                .telephone(r.getTelephone())
-                .sexe(r.getSexe())
-                .groupeSanguin(r.getGroupeSanguin())
-                .antecedents(r.getAntecedents())
+                .nom(r.getNom()).prenom(r.getPrenom()).dateNaissance(r.getDateNaissance())
+                .cin(r.getCin()).email(r.getEmail()).telephone(r.getTelephone())
+                .sexe(r.getSexe()).groupeSanguin(r.getGroupeSanguin()).antecedents(r.getAntecedents())
                 .build();
     }
 
     private PatientResponse toResponse(Patient p) {
         return PatientResponse.builder()
-                .id(p.getId())
-                .nom(p.getNom())
-                .prenom(p.getPrenom())
-                .dateNaissance(p.getDateNaissance())
-                .cin(p.getCin())
-                .email(p.getEmail())
-                .telephone(p.getTelephone())
-                .sexe(p.getSexe())
-                .groupeSanguin(p.getGroupeSanguin())
-                .antecedents(p.getAntecedents())
+                .id(p.getId()).nom(p.getNom()).prenom(p.getPrenom())
+                .dateNaissance(p.getDateNaissance()).cin(p.getCin()).email(p.getEmail())
+                .telephone(p.getTelephone()).sexe(p.getSexe())
+                .groupeSanguin(p.getGroupeSanguin()).antecedents(p.getAntecedents())
                 .build();
     }
 

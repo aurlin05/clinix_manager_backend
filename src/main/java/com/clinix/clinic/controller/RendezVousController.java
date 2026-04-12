@@ -2,6 +2,8 @@ package com.clinix.clinic.controller;
 
 import com.clinix.clinic.dto.request.RendezVousRequest;
 import com.clinix.clinic.dto.response.RendezVousResponse;
+import com.clinix.clinic.model.User;
+import com.clinix.clinic.model.enums.Role;
 import com.clinix.clinic.model.enums.StatutRDV;
 import com.clinix.clinic.service.RendezVousService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,16 +26,20 @@ public class RendezVousController {
 
     private final RendezVousService rdvService;
 
-    // GET /api/rdv?page=0&size=10
-    // GET /api/rdv?statut=EN_ATTENTE&medecinId=1&page=0
     @GetMapping
     @Operation(summary = "Liste paginée des rendez-vous avec filtres optionnels")
     public ResponseEntity<Page<RendezVousResponse>> findAll(
             @RequestParam(required = false) StatutRDV statut,
             @RequestParam(required = false) Long medecinId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(rdvService.findAll(statut, medecinId, page, size));
+            @RequestParam(defaultValue = "10") int size,
+            Authentication auth) {
+        User currentUser = (User) auth.getPrincipal();
+        Long clinicId = currentUser.getClinicId();
+        if (currentUser.getRole() == Role.MEDECIN) {
+            medecinId = currentUser.getMedecinId() != null ? currentUser.getMedecinId() : -1L;
+        }
+        return ResponseEntity.ok(rdvService.findAll(clinicId, statut, medecinId, page, size));
     }
 
     @GetMapping("/{id}")
@@ -43,8 +50,11 @@ public class RendezVousController {
 
     @PostMapping
     @Operation(summary = "Créer un nouveau rendez-vous")
-    public ResponseEntity<RendezVousResponse> create(@Valid @RequestBody RendezVousRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(rdvService.create(request));
+    public ResponseEntity<RendezVousResponse> create(
+            @Valid @RequestBody RendezVousRequest request,
+            Authentication auth) {
+        Long clinicId = ((User) auth.getPrincipal()).getClinicId();
+        return ResponseEntity.status(HttpStatus.CREATED).body(rdvService.create(clinicId, request));
     }
 
     @PutMapping("/{id}")

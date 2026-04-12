@@ -22,13 +22,14 @@ public class JwtUtil {
     // ── Génération du token ────────────────────────────────────────────────
 
     public String generateToken(User user) {
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(user.getUsername())
                 .claim("role", user.getRole().name())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
-                .signWith(getSigningKey())
-                .compact();
+                .expiration(new Date(System.currentTimeMillis() + jwtExpiration));
+        if (user.getMedecinId() != null) builder.claim("medecinId", user.getMedecinId());
+        if (user.getClinicId()  != null) builder.claim("clinicId",  user.getClinicId());
+        return builder.signWith(getSigningKey()).compact();
     }
 
     // ── Extraction du username ─────────────────────────────────────────────

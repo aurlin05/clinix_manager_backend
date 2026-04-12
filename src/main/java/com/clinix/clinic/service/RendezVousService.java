@@ -22,22 +22,23 @@ public class RendezVousService {
     private final PatientRepository patientRepository;
     private final MedecinRepository medecinRepository;
 
-    public Page<RendezVousResponse> findAll(StatutRDV statut, Long medecinId, int page, int size) {
+    public Page<RendezVousResponse> findAll(Long clinicId, StatutRDV statut, Long medecinId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("dateHeure").descending());
-        return rdvRepository.findByFilters(statut, medecinId, pageable).map(this::toResponse);
+        return rdvRepository.findByFilters(clinicId, statut, medecinId, pageable).map(this::toResponse);
     }
 
     public RendezVousResponse findById(Long id) {
         return toResponse(getRdvOrThrow(id));
     }
 
-    public RendezVousResponse create(RendezVousRequest request) {
+    public RendezVousResponse create(Long clinicId, RendezVousRequest request) {
         Patient patient = patientRepository.findById(request.getPatientId())
                 .orElseThrow(() -> new ResourceNotFoundException("Patient", request.getPatientId()));
         Medecin medecin = medecinRepository.findById(request.getMedecinId())
                 .orElseThrow(() -> new ResourceNotFoundException("Médecin", request.getMedecinId()));
 
         RendezVous rdv = RendezVous.builder()
+                .clinicId(clinicId)
                 .dateHeure(request.getDateHeure())
                 .statut(request.getStatut() != null ? request.getStatut() : StatutRDV.EN_ATTENTE)
                 .motif(request.getMotif())
@@ -76,17 +77,12 @@ public class RendezVousService {
 
     private RendezVousResponse toResponse(RendezVous r) {
         return RendezVousResponse.builder()
-                .id(r.getId())
-                .dateHeure(r.getDateHeure())
-                .statut(r.getStatut())
-                .motif(r.getMotif())
-                .notes(r.getNotes())
+                .id(r.getId()).dateHeure(r.getDateHeure()).statut(r.getStatut())
+                .motif(r.getMotif()).notes(r.getNotes())
                 .patientId(r.getPatient().getId())
-                .patientNom(r.getPatient().getNom())
-                .patientPrenom(r.getPatient().getPrenom())
+                .patientNom(r.getPatient().getNom()).patientPrenom(r.getPatient().getPrenom())
                 .medecinId(r.getMedecin().getId())
-                .medecinNom(r.getMedecin().getNom())
-                .medecinPrenom(r.getMedecin().getPrenom())
+                .medecinNom(r.getMedecin().getNom()).medecinPrenom(r.getMedecin().getPrenom())
                 .medecinSpecialite(r.getMedecin().getSpecialite())
                 .build();
     }
