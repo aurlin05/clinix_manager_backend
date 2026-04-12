@@ -16,7 +16,7 @@ public class PatientRequest {
 
     private LocalDate dateNaissance;
 
-    @Pattern(regexp = "^[A-Z]{1,2}[0-9]{6}$", message = "Format CIN invalide (ex: AB123456)")
+    @Pattern(regexp = "^(?i)[A-Z]{1,2}[0-9]{6}$", message = "Format CIN invalide (ex: AB123456)")
     private String cin;
 
     @Email(message = "Format email invalide")

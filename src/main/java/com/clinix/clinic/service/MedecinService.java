@@ -34,8 +34,8 @@ public class MedecinService {
         return medecinRepository.searchByKeyword(clinicId, keyword, pageable).map(this::toResponse);
     }
 
-    public MedecinResponse findById(Long id) {
-        return toResponse(getMedecinOrThrow(id));
+    public MedecinResponse findById(Long clinicId, Long id) {
+        return toResponse(getMedecinOrThrow(clinicId, id));
     }
 
     @Transactional
@@ -52,6 +52,10 @@ public class MedecinService {
             }
         }
 
+        if (request.getEmail() != null && medecinRepository.existsByEmailAndClinicId(request.getEmail(), clinicId)) {
+            throw new IllegalArgumentException("Un médecin avec l'email " + request.getEmail() + " existe déjà.");
+        }
+
         Medecin saved = medecinRepository.save(toEntity(request, clinicId, matricule));
 
         // Créer le compte d'accès si demandé
@@ -59,6 +63,9 @@ public class MedecinService {
         if (username != null && !username.isBlank()) {
             if (userRepository.existsByUsername(username)) {
                 throw new IllegalArgumentException("Nom d'utilisateur déjà pris : " + username);
+            }
+            if (request.getPassword() == null || request.getPassword().isBlank()) {
+                throw new IllegalArgumentException("Le mot de passe est obligatoire pour créer un compte médecin.");
             }
             userRepository.save(User.builder()
                     .username(username)
@@ -74,11 +81,16 @@ public class MedecinService {
 
     @Transactional
     public MedecinResponse update(Long clinicId, Long id, MedecinRequest request) {
-        Medecin medecin = getMedecinOrThrow(id);
+        Medecin medecin = getMedecinOrThrow(clinicId, id);
 
         if (!request.getMatricule().equals(medecin.getMatricule())
                 && medecinRepository.existsByMatriculeAndClinicId(request.getMatricule(), clinicId)) {
             throw new IllegalArgumentException("Matricule déjà utilisé : " + request.getMatricule());
+        }
+
+        if (request.getEmail() != null && !request.getEmail().equals(medecin.getEmail())
+                && medecinRepository.existsByEmailAndClinicId(request.getEmail(), clinicId)) {
+            throw new IllegalArgumentException("Un médecin avec l'email " + request.getEmail() + " existe déjà.");
         }
 
         medecin.setNom(request.getNom());
@@ -93,11 +105,9 @@ public class MedecinService {
     }
 
     @Transactional
-    public void delete(Long id) {
-        if (!medecinRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Médecin", id);
-        }
-        medecinRepository.deleteById(id);
+    public void delete(Long clinicId, Long id) {
+        Medecin medecin = getMedecinOrThrow(clinicId, id);
+        medecinRepository.delete(medecin);
     }
 
     private Medecin toEntity(MedecinRequest r, Long clinicId) {
@@ -138,8 +148,8 @@ public class MedecinService {
                 .build();
     }
 
-    private Medecin getMedecinOrThrow(Long id) {
-        return medecinRepository.findById(id)
+    private Medecin getMedecinOrThrow(Long clinicId, Long id) {
+        return medecinRepository.findByIdAndClinicId(id, clinicId)
                 .orElseThrow(() -> new ResourceNotFoundException("Médecin", id));
     }
 }

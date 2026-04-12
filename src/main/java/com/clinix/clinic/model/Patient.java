@@ -7,7 +7,10 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Entity
-@Table(name = "patients")
+@Table(name = "patients", uniqueConstraints = {
+    @UniqueConstraint(name = "uk_patient_clinic_cin", columnNames = {"clinic_id", "cin"}),
+    @UniqueConstraint(name = "uk_patient_clinic_email", columnNames = {"clinic_id", "email"})
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -27,10 +30,10 @@ public class Patient {
     @Column(name = "date_naissance")
     private LocalDate dateNaissance;
 
-    @Column(unique = true, length = 20)
+    @Column(length = 20)
     private String cin;
 
-    @Column(unique = true)
+    @Column
     private String email;
 
     @Column(length = 20)

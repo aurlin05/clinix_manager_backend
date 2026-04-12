@@ -40,6 +40,8 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
 
     long countByClinicId(Long clinicId);
 
+    java.util.Optional<Patient> findByIdAndClinicId(Long id, Long clinicId);
+
     boolean existsByCinAndClinicId(String cin, Long clinicId);
     boolean existsByEmailAndClinicId(String email, Long clinicId);
 

@@ -34,20 +34,33 @@ public class UserService {
         if (request.getPassword() == null || request.getPassword().isBlank()) {
             throw new IllegalArgumentException("Le mot de passe est obligatoire à la création.");
         }
+        Long medecinId = null;
+        if (request.getRole() == Role.MEDECIN) {
+            if (request.getMedecinId() == null) {
+                throw new IllegalArgumentException("Le champ medecinId est obligatoire pour un utilisateur médecin.");
+            }
+            medecinRepository.findByIdAndClinicId(request.getMedecinId(), clinicId)
+                    .orElseThrow(() -> new IllegalArgumentException("Médecin introuvable pour cette clinique : " + request.getMedecinId()));
+            medecinId = request.getMedecinId();
+        }
+
         User user = User.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole())
-                .medecinId(request.getRole() == Role.MEDECIN ? request.getMedecinId() : null)
+                .medecinId(medecinId)
                 .clinicId(clinicId)
                 .build();
         return toResponse(userRepository.save(user));
     }
 
     @Transactional
-    public UserResponse update(Long id, UserRequest request) {
+    public UserResponse update(Long id, UserRequest request, Long clinicId) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Utilisateur", id));
+        if (user.getClinicId() != null && !user.getClinicId().equals(clinicId)) {
+            throw new ResourceNotFoundException("Utilisateur", id);
+        }
 
         if (!user.getUsername().equals(request.getUsername())
                 && userRepository.existsByUsername(request.getUsername())) {
@@ -56,7 +69,16 @@ public class UserService {
 
         user.setUsername(request.getUsername());
         user.setRole(request.getRole());
-        user.setMedecinId(request.getRole() == Role.MEDECIN ? request.getMedecinId() : null);
+        if (request.getRole() == Role.MEDECIN) {
+            if (request.getMedecinId() == null) {
+                throw new IllegalArgumentException("Le champ medecinId est obligatoire pour un utilisateur médecin.");
+            }
+            medecinRepository.findByIdAndClinicId(request.getMedecinId(), clinicId)
+                    .orElseThrow(() -> new IllegalArgumentException("Médecin introuvable pour cette clinique : " + request.getMedecinId()));
+            user.setMedecinId(request.getMedecinId());
+        } else {
+            user.setMedecinId(null);
+        }
 
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -66,11 +88,13 @@ public class UserService {
     }
 
     @Transactional
-    public void delete(Long id) {
-        if (!userRepository.existsById(id)) {
+    public void delete(Long id, Long clinicId) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur", id));
+        if (user.getClinicId() != null && !user.getClinicId().equals(clinicId)) {
             throw new ResourceNotFoundException("Utilisateur", id);
         }
-        userRepository.deleteById(id);
+        userRepository.delete(user);
     }
 
     private UserResponse toResponse(User u) {

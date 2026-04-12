@@ -27,8 +27,8 @@ public class RendezVousService {
         return rdvRepository.findByFilters(clinicId, statut, medecinId, pageable).map(this::toResponse);
     }
 
-    public RendezVousResponse findById(Long id) {
-        return toResponse(getRdvOrThrow(id));
+    public RendezVousResponse findById(Long clinicId, Long id) {
+        return toResponse(getRdvOrThrow(clinicId, id));
     }
 
     public RendezVousResponse create(Long clinicId, RendezVousRequest request) {
@@ -36,6 +36,10 @@ public class RendezVousService {
                 .orElseThrow(() -> new ResourceNotFoundException("Patient", request.getPatientId()));
         Medecin medecin = medecinRepository.findById(request.getMedecinId())
                 .orElseThrow(() -> new ResourceNotFoundException("Médecin", request.getMedecinId()));
+
+        if (!clinicId.equals(patient.getClinicId()) || !clinicId.equals(medecin.getClinicId())) {
+            throw new IllegalArgumentException("Le patient et le médecin doivent appartenir à la même clinique que l'utilisateur.");
+        }
 
         RendezVous rdv = RendezVous.builder()
                 .clinicId(clinicId)
@@ -50,13 +54,17 @@ public class RendezVousService {
         return toResponse(rdvRepository.save(rdv));
     }
 
-    public RendezVousResponse update(Long id, RendezVousRequest request) {
-        RendezVous rdv = getRdvOrThrow(id);
+    public RendezVousResponse update(Long clinicId, Long id, RendezVousRequest request) {
+        RendezVous rdv = getRdvOrThrow(clinicId, id);
 
         Patient patient = patientRepository.findById(request.getPatientId())
                 .orElseThrow(() -> new ResourceNotFoundException("Patient", request.getPatientId()));
         Medecin medecin = medecinRepository.findById(request.getMedecinId())
                 .orElseThrow(() -> new ResourceNotFoundException("Médecin", request.getMedecinId()));
+
+        if (!clinicId.equals(patient.getClinicId()) || !clinicId.equals(medecin.getClinicId())) {
+            throw new IllegalArgumentException("Le patient et le médecin doivent appartenir à la même clinique que l'utilisateur.");
+        }
 
         rdv.setDateHeure(request.getDateHeure());
         rdv.setStatut(request.getStatut());
@@ -68,11 +76,9 @@ public class RendezVousService {
         return toResponse(rdvRepository.save(rdv));
     }
 
-    public void delete(Long id) {
-        if (!rdvRepository.existsById(id)) {
-            throw new ResourceNotFoundException("RendezVous", id);
-        }
-        rdvRepository.deleteById(id);
+    public void delete(Long clinicId, Long id) {
+        RendezVous rdv = getRdvOrThrow(clinicId, id);
+        rdvRepository.delete(rdv);
     }
 
     private RendezVousResponse toResponse(RendezVous r) {
@@ -87,8 +93,8 @@ public class RendezVousService {
                 .build();
     }
 
-    private RendezVous getRdvOrThrow(Long id) {
-        return rdvRepository.findById(id)
+    private RendezVous getRdvOrThrow(Long clinicId, Long id) {
+        return rdvRepository.findByIdAndClinicId(id, clinicId)
                 .orElseThrow(() -> new ResourceNotFoundException("RendezVous", id));
     }
 }

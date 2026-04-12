@@ -36,8 +36,8 @@ public class PatientService {
         return patientRepository.searchByMedecinId(clinicId, medecinId, keyword, pageable).map(this::toResponse);
     }
 
-    public PatientResponse findById(Long id) {
-        return toResponse(getPatientOrThrow(id));
+    public PatientResponse findById(Long clinicId, Long id) {
+        return toResponse(getPatientOrThrow(clinicId, id));
     }
 
     @Transactional
@@ -55,11 +55,16 @@ public class PatientService {
 
     @Transactional
     public PatientResponse update(Long clinicId, Long id, PatientRequest request) {
-        Patient patient = getPatientOrThrow(id);
+        Patient patient = getPatientOrThrow(clinicId, id);
 
         if (request.getCin() != null && !request.getCin().equals(patient.getCin())
                 && patientRepository.existsByCinAndClinicId(request.getCin(), clinicId)) {
             throw new IllegalArgumentException("Un patient avec le CIN " + request.getCin() + " existe déjà.");
+        }
+
+        if (request.getEmail() != null && !request.getEmail().equals(patient.getEmail())
+                && patientRepository.existsByEmailAndClinicId(request.getEmail(), clinicId)) {
+            throw new IllegalArgumentException("Un patient avec l'email " + request.getEmail() + " existe déjà.");
         }
 
         patient.setNom(request.getNom());
@@ -76,11 +81,9 @@ public class PatientService {
     }
 
     @Transactional
-    public void delete(Long id) {
-        if (!patientRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Patient", id);
-        }
-        patientRepository.deleteById(id);
+    public void delete(Long clinicId, Long id) {
+        Patient patient = getPatientOrThrow(clinicId, id);
+        patientRepository.delete(patient);
     }
 
     private Patient toEntity(PatientRequest r) {
@@ -100,8 +103,8 @@ public class PatientService {
                 .build();
     }
 
-    private Patient getPatientOrThrow(Long id) {
-        return patientRepository.findById(id)
+    private Patient getPatientOrThrow(Long clinicId, Long id) {
+        return patientRepository.findByIdAndClinicId(id, clinicId)
                 .orElseThrow(() -> new ResourceNotFoundException("Patient", id));
     }
 }

@@ -1,5 +1,6 @@
 package com.clinix.clinic.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -48,6 +49,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex) {
         return build(HttpStatus.CONFLICT, ex.getMessage(), null);
+    }
+
+    // ── 409 Conflict (violations d'intégrité de la base) ──────────────────
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        String message = "Violation d'intégrité des données. Une valeur unique existe déjà ou une référence est invalide.";
+        Throwable rootCause = ex.getRootCause();
+        if (rootCause != null) {
+            String lower = rootCause.getMessage().toLowerCase();
+            if (lower.contains("duplicate") || lower.contains("unique") || lower.contains("violates unique")) {
+                message = "Conflit d'unicité : une valeur existe déjà.";
+            } else if (lower.contains("foreign key") || lower.contains("violates foreign key")) {
+                message = "Violation de contrainte de clé étrangère : référence manquante ou invalide.";
+            }
+        }
+        return build(HttpStatus.CONFLICT, message, null);
     }
 
     // ── 500 Internal Server Error ──────────────────────────────────────────

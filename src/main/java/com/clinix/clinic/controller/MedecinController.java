@@ -48,8 +48,9 @@ public class MedecinController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Récupérer un médecin par ID")
-    public ResponseEntity<MedecinResponse> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(medecinService.findById(id));
+    public ResponseEntity<MedecinResponse> findById(@PathVariable Long id, Authentication auth) {
+        Long clinicId = ((User) auth.getPrincipal()).getClinicId();
+        return ResponseEntity.ok(medecinService.findById(clinicId, id));
     }
 
     @PostMapping
@@ -76,8 +77,9 @@ public class MedecinController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Supprimer un médecin")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        medecinService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id, Authentication auth) {
+        Long clinicId = ((User) auth.getPrincipal()).getClinicId();
+        medecinService.delete(clinicId, id);
         return ResponseEntity.noContent().build();
     }
 }

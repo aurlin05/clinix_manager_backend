@@ -44,8 +44,9 @@ public class RendezVousController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Récupérer un rendez-vous par ID")
-    public ResponseEntity<RendezVousResponse> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(rdvService.findById(id));
+    public ResponseEntity<RendezVousResponse> findById(@PathVariable Long id, Authentication auth) {
+        Long clinicId = ((User) auth.getPrincipal()).getClinicId();
+        return ResponseEntity.ok(rdvService.findById(clinicId, id));
     }
 
     @PostMapping
@@ -61,14 +62,17 @@ public class RendezVousController {
     @Operation(summary = "Mettre à jour un rendez-vous")
     public ResponseEntity<RendezVousResponse> update(
             @PathVariable Long id,
-            @Valid @RequestBody RendezVousRequest request) {
-        return ResponseEntity.ok(rdvService.update(id, request));
+            @Valid @RequestBody RendezVousRequest request,
+            Authentication auth) {
+        Long clinicId = ((User) auth.getPrincipal()).getClinicId();
+        return ResponseEntity.ok(rdvService.update(clinicId, id, request));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Supprimer un rendez-vous")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        rdvService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id, Authentication auth) {
+        Long clinicId = ((User) auth.getPrincipal()).getClinicId();
+        rdvService.delete(clinicId, id);
         return ResponseEntity.noContent().build();
     }
 }

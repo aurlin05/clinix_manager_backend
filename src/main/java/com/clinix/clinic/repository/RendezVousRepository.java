@@ -47,6 +47,8 @@ public interface RendezVousRepository extends JpaRepository<RendezVous, Long> {
     @Query("UPDATE RendezVous r SET r.clinicId = :clinicId WHERE r.clinicId IS NULL")
     int assignClinicToUnassigned(@Param("clinicId") Long clinicId);
 
+    java.util.Optional<RendezVous> findByIdAndClinicId(Long id, Long clinicId);
+
     @Query("SELECT r.statut, COUNT(r) FROM RendezVous r WHERE r.clinicId = :clinicId GROUP BY r.statut")
     List<Object[]> getRdvDistributionByStatut(@Param("clinicId") Long clinicId);
 

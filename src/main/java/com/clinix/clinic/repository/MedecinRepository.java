@@ -23,7 +23,9 @@ public interface MedecinRepository extends JpaRepository<Medecin, Long> {
                                   Pageable pageable);
 
     long countByClinicId(Long clinicId);
+    java.util.Optional<Medecin> findByIdAndClinicId(Long id, Long clinicId);
     boolean existsByMatriculeAndClinicId(String matricule, Long clinicId);
+    boolean existsByEmailAndClinicId(String email, Long clinicId);
 
     @org.springframework.data.jpa.repository.Modifying
     @Query("UPDATE Medecin m SET m.clinicId = :clinicId WHERE m.clinicId IS NULL")

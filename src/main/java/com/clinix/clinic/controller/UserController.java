@@ -46,14 +46,17 @@ public class UserController {
     @PutMapping("/{id}")
     @Operation(summary = "Modifier un utilisateur (rôle, mot de passe)")
     public ResponseEntity<UserResponse> update(@PathVariable Long id,
-                                               @Valid @RequestBody UserRequest request) {
-        return ResponseEntity.ok(userService.update(id, request));
+                                               @Valid @RequestBody UserRequest request,
+                                               Authentication auth) {
+        Long clinicId = ((User) auth.getPrincipal()).getClinicId();
+        return ResponseEntity.ok(userService.update(id, request, clinicId));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Supprimer un utilisateur")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        userService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id, Authentication auth) {
+        Long clinicId = ((User) auth.getPrincipal()).getClinicId();
+        userService.delete(id, clinicId);
         return ResponseEntity.noContent().build();
     }
 }

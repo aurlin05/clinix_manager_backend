@@ -64,8 +64,9 @@ public class PatientController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Récupérer un patient par ID")
-    public ResponseEntity<PatientResponse> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(patientService.findById(id));
+    public ResponseEntity<PatientResponse> findById(@PathVariable Long id, Authentication auth) {
+        Long clinicId = ((User) auth.getPrincipal()).getClinicId();
+        return ResponseEntity.ok(patientService.findById(clinicId, id));
     }
 
     @PostMapping
@@ -89,8 +90,9 @@ public class PatientController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Supprimer un patient")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        patientService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id, Authentication auth) {
+        Long clinicId = ((User) auth.getPrincipal()).getClinicId();
+        patientService.delete(clinicId, id);
         return ResponseEntity.noContent().build();
     }
 }

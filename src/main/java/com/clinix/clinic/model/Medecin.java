@@ -7,7 +7,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "medecins", uniqueConstraints = {
-    @UniqueConstraint(name = "uk_medecin_clinic_matricule", columnNames = {"clinic_id", "matricule"})
+    @UniqueConstraint(name = "uk_medecin_clinic_matricule", columnNames = {"clinic_id", "matricule"}),
+    @UniqueConstraint(name = "uk_medecin_clinic_email", columnNames = {"clinic_id", "email"})
 })
 @Data
 @NoArgsConstructor
@@ -28,7 +29,7 @@ public class Medecin {
     @Column(nullable = false)
     private String specialite;
 
-    @Column(unique = true)
+    @Column
     private String email;
 
     @Column(length = 20)
@@ -38,6 +39,7 @@ public class Medecin {
     private String matricule;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean disponible = true;
 
     @Column(name = "clinic_id")
