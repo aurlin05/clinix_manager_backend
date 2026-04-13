@@ -36,6 +36,11 @@ public class AuthService {
             throw new IllegalArgumentException(
                     "Le nom d'utilisateur '" + request.getUsername() + "' est déjà utilisé.");
         }
+        if (request.getEmail() != null && !request.getEmail().isBlank()
+                && userRepository.existsByEmail(request.getEmail())) {
+            throw new IllegalArgumentException(
+                    "L'adresse email '" + request.getEmail() + "' est déjà utilisée.");
+        }
 
         // Nouvelle clinique
         Clinic clinic = clinicRepository.save(
@@ -44,6 +49,8 @@ public class AuthService {
 
         User user = User.builder()
                 .username(request.getUsername())
+                .email(request.getEmail() != null && !request.getEmail().isBlank()
+                        ? request.getEmail() : null)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.ADMIN)
                 .clinicId(clinic.getId())
@@ -60,11 +67,15 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
+        // Résoudre l'identifiant : email → username si nécessaire
+        String identifier = request.getUsernameOrEmail().trim();
+        String resolvedUsername = resolveUsername(identifier);
+
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(resolvedUsername, request.getPassword())
         );
 
-        User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
+        User user = userRepository.findByUsername(resolvedUsername).orElseThrow();
         String token = jwtUtil.generateToken(user);
 
         return AuthResponse.builder()
@@ -72,5 +83,16 @@ public class AuthService {
                 .username(user.getUsername())
                 .role(user.getRole())
                 .build();
+    }
+
+    private String resolveUsername(String identifier) {
+        // Si l'identifiant contient un @, on cherche par email
+        if (identifier.contains("@")) {
+            return userRepository.findByEmail(identifier)
+                    .map(User::getUsername)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Aucun compte associé à cet email."));
+        }
+        return identifier;
     }
 }
