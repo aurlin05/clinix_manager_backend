@@ -32,7 +32,7 @@ public interface MedecinRepository extends JpaRepository<Medecin, Long> {
     int assignClinicToUnassigned(@Param("clinicId") Long clinicId);
 
     @Query(value = "SELECT m.id, m.nom, m.prenom, m.specialite, COUNT(r.id) as nombreRdv " +
-           "FROM medecin m LEFT JOIN rendez_vous r ON m.id = r.medecin_id " +
+           "FROM medecins m LEFT JOIN rendez_vous r ON m.id = r.medecin_id " +
            "WHERE m.clinic_id = :clinicId GROUP BY m.id ORDER BY nombreRdv DESC LIMIT 5",
            nativeQuery = true)
     List<Object[]> findTop5MedecinsByRdvCount(@Param("clinicId") Long clinicId);
